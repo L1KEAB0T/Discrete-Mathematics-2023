@@ -1,70 +1,92 @@
 #include <iostream>
-#include <climits>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
-#define N 100
+template <typename T>
+class Graph {
+public:
+    int vertices;
+    vector<pair<T, pair<int, int>>> edges;
 
-int p[N], key[N], tb[N][N];
+    Graph(int vertices) : vertices(vertices) {}
 
-void prim(int v, int n) {
-    int i, j;
-    int min;
-
-    for (i = 1; i <= n; i++) {
-        p[i] = v;
-        key[i] = tb[v][i];
+    void addEdge(int u, int v, T weight) {
+        edges.push_back({ weight, {u, v} });
     }
 
-    key[v] = 0;
+    int kruskalMinimumSpanningTree() {
+        vector<int> parent(vertices + 1);
+        int totalCost = 0;
 
-    for (i = 2; i <= n; i++) {
-        min = INT_MAX;
+        // 初始化每个节点的父节点为自己
+        for (int i = 1; i <= vertices; i++) {
+            parent[i] = i;
+        }
 
-        for (j = 1; j <= n; j++)
-            if (key[j] > 0 && key[j] < min) {
-                v = j;
-                min = key[j];
+        // 将边按权值升序排序
+        sort(edges.begin(), edges.end());
+
+        // 遍历每条边，加入最小生成树
+        for (auto edge : edges) {
+            int u = edge.second.first;
+            int v = edge.second.second;
+            T weight = edge.first;
+
+            // 检查加入该边是否形成环
+            if (findParent(parent, u) != findParent(parent, v)) {
+                // 如果不形成环，则加入最小生成树，并更新父节点
+                totalCost += weight;
+                unionSets(parent, u, v);
             }
+        }
 
-        cout << "最小耗费是:" << p[v] << "和" << v << " \n";
-
-        key[v] = 0;
-
-        for (j = 1; j <= n; j++)
-            if (tb[v][j] < key[j])
-                p[j] = v,
-                key[j] = tb[v][j];
+        return totalCost;
     }
-}
+
+private:
+    int findParent(vector<int>& parent, int node) {
+        if (parent[node] != node) {
+            parent[node] = findParent(parent, parent[node]);
+        }
+        return parent[node];
+    }
+
+    void unionSets(vector<int>& parent, int u, int v) {
+        int rootU = findParent(parent, u);
+        int rootV = findParent(parent, v);
+
+        parent[rootU] = rootV;
+    }
+};
 
 int main() {
-    int n, m;
-    int i, j;
-    int u, v, w;
+    int numberOfVertices, numberOfEdges;
+    int u, v;
+    double weight;
 
-    cout << "请输入所求图的顶点数目和边的数目(以空格分隔各个数，输入两个0结束):\n";
+    cout << "请输入图的顶点数和边数（用空格分隔），输入 0 0 退出:\n";
 
-    while (cin >> n >> m) {
-        if (m != 0 && n != 0) {
-            for (i = 1; i <= n; i++) {
-                for (j = 1; j <= n; j++)
-                    tb[i][j] = INT_MAX;
+    while (cin >> numberOfVertices >> numberOfEdges) {
+        if (numberOfEdges != 0 && numberOfVertices != 0) {
+            Graph<double> graph(numberOfVertices);
+
+            cout << "请输入两个边的顶点索引和它们的权值（用空格分隔）:\n";
+
+            while (numberOfEdges--) {
+                cin >> u >> v >> weight;
+                graph.addEdge(u, v, weight);
             }
 
-            cout << "请输入两条边的节点序号以及它们的权值(以空格分隔各个数):\n";
+            double totalCost = graph.kruskalMinimumSpanningTree();
 
-            while (m--) {
-                cin >> u >> v >> w;
-                tb[u][v] = tb[v][u] = w;
-            }
-
-            prim(1, n);
+            cout << "Kruskal算法生成的最小生成树 (MST) 总权值为: " << totalCost << " 万元\n";
 
             cout << endl;
-            cout << "请输入所求图的顶点数目和边的数目(以空格分隔各个数，输入两个0结束):\n";
+            cout << "请输入图的顶点数和边数（用空格分隔），输入 0 0 退出:\n";
         }
-        else if (n == 0 && m == 0) {
+        else if (numberOfVertices == 0 && numberOfEdges == 0) {
             return 0;
         }
     }
